@@ -75,36 +75,36 @@ contract Voting is Ownable {
     // FUNCTIONS /////////     
     //////////////////////
 
-/*
-* @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
-*/
+    /*
+    * @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
+    */
     function startProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.RegisteringVoters, "Can't start proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationStarted;
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted); 
     }
 
-/*
-* @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
-*/
+    /*
+    * @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
+    */
     function endProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationStarted, "Can't end proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationEnded;
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded); 
     }
 
-/*
-* @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
-*/
+    /*
+    * @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
+    */
     function startVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationEnded, "Can't start voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionStarted; 
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted); 
     }
 
-/*
-* @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
-*/
+    /*
+    * @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
+    */
     function endVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.VotingSessionStarted, "Can't end voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionEnded; 
