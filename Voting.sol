@@ -75,36 +75,36 @@ contract Voting is Ownable {
     // FUNCTIONS /////////     
     //////////////////////
 
-    /*
-    * @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
-    */
+/*
+* @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
+*/
     function startProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.RegisteringVoters, "Can't start proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationStarted;
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted); 
     }
 
-    /*
-    * @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
-    */
+/*
+* @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
+*/
     function endProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationStarted, "Can't end proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationEnded;
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded); 
     }
 
-    /*
-    * @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
-    */
+/*
+* @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
+*/
     function startVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationEnded, "Can't start voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionStarted; 
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted); 
     }
 
-    /*
-    * @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
-    */
+/*
+* @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
+*/
     function endVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.VotingSessionStarted, "Can't end voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionEnded; 
@@ -138,22 +138,6 @@ contract Voting is Ownable {
         proposals.push(Proposal(_description, 0)); 
         emit ProposalRegistered(proposals.length - 1); 
     }
-
-    /*
-    * @dev Return proposal's ID from the specific description 
-    *      Revert if not found
-    * @param _description Description of a proposal
-    * @return Return the proposal ID
-    */
-    function getProposalIdByDescription(string memory _description) internal view returns (uint) {
-        for (uint i = 0; i < proposals.length; i++) {
-            if (keccak256(abi.encodePacked(proposals[i].description)) == keccak256(abi.encodePacked(_description))) {
-                return i; 
-            }
-        }
-        revert("Proposal not found"); 
-    }
-
 
     /*
     * @dev Register voter's voting proposal      
@@ -195,9 +179,29 @@ contract Voting is Ownable {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
     }
 
+    //////////////////////     
+    // GETTERS ///////////    
+    //////////////////////
+
     /*
-    * @dev Return the winning proposal   
-    * @return Return the winning proposal
+    * @dev Return the entire eligible proposals' list to the voting session 
+    * @return Return the proposal's list
+    */
+    function getProposalsList() public view returns (string[] memory) {
+        require(currentStatus >= WorkflowStatus.ProposalsRegistrationStarted, "Proposals registration has not started");
+        require(proposals.length != 0, "No proposal registered yet.");
+
+        string[] memory proposalDescriptions = new string[](proposals.length);
+        for (uint i = 0; i < proposals.length; i++) {
+            proposalDescriptions[i] = proposals[i].description;
+        }
+
+        return proposalDescriptions;
+    }
+
+    /*
+    * @dev Return the winning proposal after the votes are tallied
+    * @return Return the winning proposal (w/ description)
     */
     function getWinner() public view onlyAfterVotesTallied returns (Proposal memory) {
         if (winningProposalId < proposals.length) { 
@@ -205,6 +209,61 @@ contract Voting is Ownable {
         } else {
             revert("No winning proposal");
         }
+    }
+
+    /*
+    * @dev Return proposal's ID from the specific description 
+    *      Revert if not found
+    * @param _description Description of a proposal
+    * @return Return the proposal ID
+    */
+    function getProposalIdByDescription(string memory _description) public view returns (uint) {
+        for (uint i = 0; i < proposals.length; i++) {
+            if (keccak256(abi.encodePacked(proposals[i].description)) == keccak256(abi.encodePacked(_description))) {
+                return i; 
+            }
+        }
+        revert("Proposal not found"); 
+    }
+
+    /**
+     * @dev Retrieves information about a proposal.
+     * @param proposalId ID of the proposal.
+     * @return Return the description of the proposal.
+     * @return Return the number of votes received by the proposal.
+     */
+    function getProposal(uint proposalId) public view onlyRegisteredVoter returns (string memory, uint) {
+        require(proposalId < proposals.length, "Invalid proposal ID");
+        Proposal memory proposal = proposals[proposalId];
+        return (proposal.description, proposal.voteCount);
+    }
+
+    /*
+    * @dev Return the votes of a specific voter
+    * @param _voterAddress The address of the voter
+    * @return Return the votes of the voter
+    */
+    function getVoterVotes(address _voterAddress) public view onlyRegisteredVoter returns (string[] memory) {
+        require(voters[_voterAddress].isRegistered, "Voter not registered");
+
+        uint count = 0;
+        for (uint i = 0; i < proposals.length; i++) {
+            if (voters[_voterAddress].votedProposalId == i) {
+                count++;
+            }
+        }
+
+        string[] memory voterVotes = new string[](count);
+        count = 0;
+
+        for (uint i = 0; i < proposals.length; i++) {
+            if (voters[_voterAddress].votedProposalId == i) {
+                voterVotes[count] = proposals[i].description;
+                count++;
+            }
+        }
+
+        return voterVotes;
     }
 
 
