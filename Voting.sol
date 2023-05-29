@@ -8,6 +8,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 * @notice -> Given here -> https://formation.alyra.fr/products/developpeur-blockchain/categories/2149052575/posts/2153025072
 * 
 */
+
 contract Voting is Ownable {
 
     struct Voter {
