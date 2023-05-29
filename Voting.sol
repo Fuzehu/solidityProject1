@@ -38,7 +38,12 @@ contract Voting is Ownable {
     event ProposalRegistered(uint proposalId);
     event Voted (address voter, uint proposalId);
 
-    mapping (address => Voter) public voters; 
+    mapping (address => Voter) public voters;    
+    /*
+    * @dev Add the voter's address to the voterAddresses array to keep track of registered voters
+    *      This will be useful later for registered voters to access the votes of other voters (via getter called "getVotersAddress" & "getVoterVotes")
+    */
+    address[] public voterAddresses;    
 
     Proposal[] public proposals;
 
@@ -75,36 +80,36 @@ contract Voting is Ownable {
     // FUNCTIONS /////////     
     //////////////////////
 
-    /*
-    * @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
-    */
+/*
+* @dev Switch current workflow status from RegisteringVoters to ProposalsRegistrationStarted
+*/
     function startProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.RegisteringVoters, "Can't start proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationStarted;
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted); 
     }
 
-    /*
-    * @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
-    */
+/*
+* @dev Switch current workflow status from ProposalsRegistrationStarted to ProposalsRegistrationEnded
+*/
     function endProposalsRegistration() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationStarted, "Can't end proposals registration at this stage");
         currentStatus = WorkflowStatus.ProposalsRegistrationEnded;
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded); 
     }
 
-    /*
-    * @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
-    */
+/*
+* @dev Switch current workflow status from ProposalsRegistrationEnded to VotingSessionStarted
+*/
     function startVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.ProposalsRegistrationEnded, "Can't start voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionStarted; 
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted); 
     }
 
-    /*
-    * @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
-    */
+/*
+* @dev Switch current workflow status from VotingSessionStarted to VotingSessionEnded
+*/
     function endVotingSession() external onlyOwner {
         require(currentStatus == WorkflowStatus.VotingSessionStarted, "Can't end voting session at this stage");
         currentStatus = WorkflowStatus.VotingSessionEnded; 
@@ -114,12 +119,14 @@ contract Voting is Ownable {
 
     /*
     * @dev Add voter to whitelist from his address 
+    *      Add voter's address to voterAddress array
     * @param _address User's address 
     */
     function Whitelist (address _address) external onlyOwner {
         require(currentStatus == WorkflowStatus.RegisteringVoters, "Too late, registering session ended");  
         require(!voters[_address].isRegistered, "You are already registered."); 
         voters[_address].isRegistered = true; 
+        voterAddresses.push(_address);
         emit VoterRegistered(_address); 
     }
 
@@ -239,6 +246,14 @@ contract Voting is Ownable {
     }
 
     /*
+    * @dev Retrieves the addresses of all registered voters.
+    * @return An array of voter addresses.
+    */
+    function getVotersAddress() public view onlyRegisteredVoter returns (address[] memory) {
+        return voterAddresses;
+    }
+
+    /*
     * @dev Return the votes of a specific voter
     * @param _voterAddress The address of the voter
     * @return Return the votes of the voter
@@ -265,6 +280,5 @@ contract Voting is Ownable {
 
         return voterVotes;
     }
-
 
 }
